@@ -41,22 +41,22 @@
     el.innerHTML = `
       <div class="q-head">
         ${q.verb ? `<span class="pill verb">${esc(q.verb)}</span>` : ""}
-        <span class="pill marks">${q.marks} оноо</span>
-        ${q.kind === "variant" ? `<span class="pill">Өөр хэлбэр</span>` : ""}
+        <span class="pill marks">${q.marks} ${q.marks === 1 ? "mark" : "marks"}</span>
+        ${q.kind === "variant" ? `<span class="pill">Variant</span>` : ""}
         ${opts.showTopic && t ? `<a class="pill" href="#/t/${t.id}">${esc(t.title)}</a>` : ""}
       </div>
       <div class="q-text">${esc(q.q)}</div>
-      <textarea class="attempt${q.code ? " code" : ""}" placeholder="Эхлээд өөрөө англиар бичиж үзээрэй…" aria-label="Таны хариулт"></textarea>
+      <textarea class="attempt${q.code ? " code" : ""}" placeholder="Write your answer first…" aria-label="Your answer"></textarea>
       <div class="row" style="margin-top:10px">
-        <button class="btn primary" data-act="reveal">Загвар хариулт харах</button>
+        <button class="btn primary" data-act="reveal">Show model answer</button>
       </div>
       <div class="answer" hidden>
         ${q.code ? `<pre><code>${esc(q.code)}</code></pre>` : ""}
         <ol>${q.points.map((p) => `<li>${esc(p)}</li>`).join("")}</ol>
-        ${q.alt ? `<div class="alt"><strong>Өөр хүлээн зөвшөөрөгдөх хариулт:</strong><br>${q.alt.map(esc).join("<br>")}</div>` : ""}
+        ${q.alt ? `<div class="alt"><strong>Also accepted:</strong><br>${q.alt.map(esc).join("<br>")}</div>` : ""}
         ${opts.selfMark ? `
           <div class="row" style="margin-top:14px">
-            <span class="muted" style="font-size:.88rem">Өөрийгөө дүгнэ: хэдэн оноо авах байсан бэ?</span>
+            <span class="muted" style="font-size:.88rem">Mark yourself: how many marks would you get?</span>
           </div>
           <div class="row" style="margin-top:6px">
             ${Array.from({ length: q.marks + 1 }, (_, i) => `<button class="btn" data-mark="${i}">${i}/${q.marks}</button>`).join("")}
@@ -65,7 +65,7 @@
     const ans = el.querySelector(".answer");
     el.querySelector('[data-act="reveal"]').addEventListener("click", (e) => {
       ans.hidden = !ans.hidden;
-      e.target.textContent = ans.hidden ? "Загвар хариулт харах" : "Хариултыг нуух";
+      e.target.textContent = ans.hidden ? "Show model answer" : "Hide answer";
     });
     el.querySelectorAll("[data-mark]").forEach((b) => b.addEventListener("click", () => {
       const got = Number(b.dataset.mark);
@@ -91,15 +91,15 @@
       <p class="lead">${esc(SITE.lead)}</p>
       <div class="progress">
         <div class="bar"><span style="width:${(done / TOPICS.length) * 100}%"></span></div>
-        <span class="muted">${done} / ${TOPICS.length} сэдэв сурсан</span>
+        <span class="muted">${done} / ${TOPICS.length} topics learned</span>
       </div>
-      <div class="chips" role="group" aria-label="Ангилал"></div>
+      <div class="chips" role="group" aria-label="Categories"></div>
       <div class="grid"></div>`;
     const chips = app.querySelector(".chips");
-    [{ id: "all", mn: "Бүгд" }, ...CATEGORIES].forEach((c) => {
+    [{ id: "all", label: "All" }, ...CATEGORIES].forEach((c) => {
       const b = document.createElement("button");
       b.className = "chip" + (topicFilter === c.id ? " on" : "");
-      b.textContent = c.mn;
+      b.textContent = c.label;
       b.addEventListener("click", () => { topicFilter = c.id; store.set("filter", c.id); viewTopics(); });
       chips.appendChild(b);
     });
@@ -110,13 +110,13 @@
       a.className = "tcard";
       a.href = "#/t/" + t.id;
       a.innerHTML = `
-        <span class="pill">${esc(catById[t.cat].mn)}</span>${t.src === "slides" ? ` <span class="pill slides">Слайдаас</span>` : ""}
+        <span class="pill">${esc(catById[t.cat].label)}</span>${t.src === "slides" ? ` <span class="pill slides">From slides</span>` : ""}
         <h3>${esc(t.title)}</h3>
-        <div class="mn">${esc(t.titleMn)}</div>
+        <div class="mn">${esc(t.subtitle)}</div>
         <div class="meta">
-          <span class="pill">${n} асуулт</span>
-          ${hasViz(t.id) ? `<span class="pill verb">◆ Дүрслэлтэй</span>` : ""}
-          ${learned.has(t.id) ? `<span class="pill done">✓ Сурсан</span>` : ""}
+          <span class="pill">${n} ${n === 1 ? "question" : "questions"}</span>
+          ${hasViz(t.id) ? `<span class="pill verb">◆ Interactive</span>` : ""}
+          ${learned.has(t.id) ? `<span class="pill done">✓ Learned</span>` : ""}
         </div>`;
       grid.appendChild(a);
     });
@@ -128,40 +128,40 @@
     setActiveNav("topics");
     const variants = (typeof VARIANTS !== "undefined" && VARIANTS[id]) || [];
     app.innerHTML = `
-      <div class="crumb"><a class="btn ghost" href="#/">← Бүх сэдэв</a></div>
-      <span class="pill">${esc(catById[t.cat].mn)}</span>${t.src === "slides" ? ` <span class="pill slides">Таны слайдаас</span>` : ""}
+      <div class="crumb"><a class="btn ghost" href="#/">← All topics</a></div>
+      <span class="pill">${esc(catById[t.cat].label)}</span>${t.src === "slides" ? ` <span class="pill slides">From your slides</span>` : ""}
       <h1 style="margin-top:8px">${esc(t.title)}</h1>
-      <p class="muted">${esc(t.titleMn)}</p>
+      <p class="muted">${esc(t.subtitle)}</p>
 
-      <div class="section-label">1 · Монгол тайлбар</div>
+      <div class="section-label">1 · Explanation</div>
       <div class="explain">${t.explain.map((p) => `<p>${esc(p)}</p>`).join("")}</div>
-      ${t.analogy ? `<div class="analogy"><strong>Зүйрлэл</strong>${esc(t.analogy)}</div>` : ""}
+      ${t.analogy ? `<div class="analogy"><strong>Think of it like this</strong>${esc(t.analogy)}</div>` : ""}
 
-      ${hasViz(id) ? `<div class="section-label">Дүрслэл</div><div class="card viz" id="viz"></div>` : ""}
+      ${hasViz(id) ? `<div class="section-label">Interactive</div><div class="card viz" id="viz"></div>` : ""}
 
-      <div class="section-label">2 · Key terms: marker-ийн хайдаг үгс</div>
-      <table class="kw"><thead><tr><th>English keyword</th><th>Монгол утга</th></tr></thead>
+      <div class="section-label">2 · Key terms markers look for</div>
+      <table class="kw"><thead><tr><th>Keyword</th><th>Meaning</th></tr></thead>
         <tbody>${t.keywords.map(([en, mn]) => `<tr><td>${esc(en)}</td><td>${esc(mn)}</td></tr>`).join("")}</tbody></table>
 
-      <div class="section-label">3 · Шалгалтын хэв маягийн асуулт</div>
+      <div class="section-label">3 · Exam-style questions</div>
       <div id="core"></div>
 
       ${variants.length ? `
-        <div class="section-label">4 · Өөр хэлбэрээр асуувал</div>
-        <p class="variant-note">Бодит шалгалтад ижил ойлголтыг өөр хувилбар, өөр command word-оор асууж болно.</p>
+        <div class="section-label">4 · Asked another way</div>
+        <p class="variant-note">The real exam may test the same idea with a different scenario or command word.</p>
         <div id="variants"></div>` : ""}
 
       ${t.mistakes && t.mistakes.length ? `
-        <div class="section-label">${variants.length ? 5 : 4} · Түгээмэл алдаа</div>
+        <div class="section-label">${variants.length ? 5 : 4} · Common mistakes</div>
         <ul class="mistakes">${t.mistakes.map((m) => `<li>${esc(m)}</li>`).join("")}</ul>` : ""}
 
       <div class="row" style="margin-top:28px">
-        <button class="btn ${learned.has(id) ? "" : "primary"}" id="learnBtn">${learned.has(id) ? "✓ Сурсан гэж тэмдэглэсэн" : "Сурсан гэж тэмдэглэх"}</button>
-        <a class="btn" href="#/drill?t=${id}">Энэ сэдвээр санамсаргүй дадлага</a>
+        <button class="btn ${learned.has(id) ? "" : "primary"}" id="learnBtn">${learned.has(id) ? "✓ Marked as learned" : "Mark as learned"}</button>
+        <a class="btn" href="#/drill?t=${id}">Drill this topic</a>
       </div>`;
     if (hasViz(id)) {
       try { VIZ[id](app.querySelector("#viz")); }
-      catch (e) { app.querySelector("#viz").textContent = "Дүрслэлийг ачаалж чадсангүй."; }
+      catch (e) { app.querySelector("#viz").textContent = "The interactive could not be loaded."; }
     }
     const core = app.querySelector("#core");
     POOL.filter((q) => q.topic === id && q.kind === "core").forEach((q) => core.appendChild(questionCard(q)));
@@ -194,26 +194,26 @@
         .map(([id, r]) => ({ id, pct: Math.round((r.got / r.total) * 100), r }))
         .sort((a, b) => a.pct - b.pct)
         .slice(0, 5);
-      if (!rows.length) return `<p class="muted">Асуулт бүрийн дараа өөрийгөө дүгнэвэл сул сэдвүүд энд гарна.</p>`;
-      return `<table class="kw"><thead><tr><th>Сэдэв</th><th>Авсан оноо</th></tr></thead><tbody>${rows.map((x) =>
+      if (!rows.length) return `<p class="muted">Mark yourself after each question and your weakest topics will appear here.</p>`;
+      return `<table class="kw"><thead><tr><th>Topic</th><th>Score</th></tr></thead><tbody>${rows.map((x) =>
         `<tr><td><a href="#/t/${x.id}">${esc(topicById[x.id] ? topicById[x.id].title : x.id)}</a></td><td>${x.pct}% (${x.r.got}/${x.r.total})</td></tr>`).join("")}</tbody></table>`;
     }
 
     function render() {
       pick();
       app.innerHTML = `
-        <h1>Санамсаргүй дадлага</h1>
-        <p class="lead">${onlyTopic ? `Сэдэв: <strong>${esc(topicById[onlyTopic].title)}</strong>. ` : ""}Нийт ${POOL.length} асуултаас санамсаргүй сонгоно. Жишээ шалгалтынх болон өөр хэлбэрийн асуултууд холилдсон. Эхлээд хариултаа бичиж, дараа нь загвартай харьцуулж өөрийгөө дүгнэ.</p>
-        ${onlyTopic ? `<p><a class="btn ghost" href="#/drill">← Бүх сэдвээр</a></p>` : `<div class="chips" role="group" aria-label="Ангилал"></div>`}
+        <h1>Random drill</h1>
+        <p class="lead">${onlyTopic ? `Topic: <strong>${esc(topicById[onlyTopic].title)}</strong>. ` : ""}Questions are drawn at random from all ${POOL.length}. Write your answer first, then compare it with the model answer and mark yourself.</p>
+        ${onlyTopic ? `<p><a class="btn ghost" href="#/drill">← All topics</a></p>` : `<div class="chips" role="group" aria-label="Categories"></div>`}
         <div id="qbox"></div>
-        <div class="row" style="margin:6px 0 30px"><button class="btn" id="next">Дараагийн асуулт →</button></div>
-        <div class="section-label">Сул сэдвүүд (таны дүгнэлтээр)</div>
+        <div class="row" style="margin:6px 0 30px"><button class="btn" id="next">Next question →</button></div>
+        <div class="section-label">Weakest topics (from your self-marking)</div>
         ${weakList()}`;
       const chips = app.querySelector(".chips");
-      if (chips) [{ id: "all", mn: "Бүгд" }, ...CATEGORIES].forEach((c) => {
+      if (chips) [{ id: "all", label: "All" }, ...CATEGORIES].forEach((c) => {
         const b = document.createElement("button");
         b.className = "chip" + (cat === c.id ? " on" : "");
-        b.textContent = c.mn;
+        b.textContent = c.label;
         b.addEventListener("click", () => { cat = c.id; store.set("drillCat", c.id); render(); });
         chips.appendChild(b);
       });
@@ -234,7 +234,7 @@
       const a = document.createElement("a");
       a.className = "tcard";
       a.href = "#/code/" + c.id;
-      a.innerHTML = `<span class="pill marks">${c.marks} оноо</span><h3>${esc(c.title)}</h3><div class="mn">${esc(c.task.split("\n")[0].slice(0, 110))}${c.task.length > 110 ? "…" : ""}</div>`;
+      a.innerHTML = `<span class="pill marks">${c.marks} marks</span><h3>${esc(c.title)}</h3><div class="mn">${esc(c.task.split("\n")[0].slice(0, 110))}${c.task.length > 110 ? "…" : ""}</div>`;
       grid.appendChild(a);
     });
   }
@@ -245,20 +245,20 @@
     setActiveNav("code");
     let hintIdx = 0;
     app.innerHTML = `
-      <div class="crumb"><a class="btn ghost" href="#/code">← Бүх даалгавар</a></div>
-      <span class="pill marks">${c.marks} оноо</span>
+      <div class="crumb"><a class="btn ghost" href="#/code">← All tasks</a></div>
+      <span class="pill marks">${c.marks} marks</span>
       <h1 style="margin-top:8px">${esc(c.title)}</h1>
       <div class="card">
         ${c.task.split("\n").map((p) => `<p>${esc(p)}</p>`).join("")}
-        <textarea class="attempt code" placeholder="Хариултаа энд бич…" aria-label="Таны хариулт"></textarea>
+        <textarea class="attempt code" placeholder="Write your answer here…" aria-label="Your answer"></textarea>
         <div class="row" style="margin-top:10px">
           <button class="btn" id="hintBtn">Hint (${c.hints.length})</button>
-          <button class="btn primary" id="solBtn">Шийдэл ба онооны шалгуур</button>
+          <button class="btn primary" id="solBtn">Model answer & marking key</button>
         </div>
         <div id="hints"></div>
         <div class="answer" id="sol" hidden>
           <pre><code>${esc(c.solution)}</code></pre>
-          <h3>Онооны шалгуур</h3>
+          <h3>Marking key</h3>
           <ol>${c.points.map((p) => `<li>${esc(p)}</li>`).join("")}</ol>
         </div>
       </div>`;
@@ -270,13 +270,13 @@
       d.textContent = `💡 ${hintIdx + 1}. ${c.hints[hintIdx]}`;
       app.querySelector("#hints").appendChild(d);
       hintIdx++;
-      hb.textContent = hintIdx >= c.hints.length ? "Hint дууссан" : `Дараагийн hint (${c.hints.length - hintIdx})`;
+      hb.textContent = hintIdx >= c.hints.length ? "No more hints" : `Next hint (${c.hints.length - hintIdx})`;
       hb.disabled = hintIdx >= c.hints.length;
     });
     app.querySelector("#solBtn").addEventListener("click", (e) => {
       const s = app.querySelector("#sol");
       s.hidden = !s.hidden;
-      e.target.textContent = s.hidden ? "Шийдэл ба онооны шалгуур" : "Шийдлийг нуух";
+      e.target.textContent = s.hidden ? "Model answer & marking key" : "Hide answer";
     });
     window.scrollTo(0, 0);
   }
@@ -290,11 +290,11 @@
         const best = Math.max(store.get("quizBest", 0), score);
         store.set("quizBest", best);
         app.innerHTML = `
-          <h1>Quiz дууслаа</h1>
+          <h1>Quiz complete</h1>
           <div class="card" style="text-align:center">
             <div class="score">${score} / ${qs.length}</div>
-            <p class="muted">Хамгийн өндөр оноо: ${best} / 10</p>
-            <button class="btn primary" id="again">Дахин эхлэх (шинэ асуултууд)</button>
+            <p class="muted">Best score: ${best} / 10</p>
+            <button class="btn primary" id="again">Try again (new questions)</button>
           </div>`;
         app.querySelector("#again").addEventListener("click", viewQuiz);
         return;
@@ -302,7 +302,7 @@
       const q = qs[i];
       app.innerHTML = `
         <h1>Quiz</h1>
-        <p class="muted">Асуулт ${i + 1} / ${qs.length} · Оноо: ${score}</p>
+        <p class="muted">Question ${i + 1} / ${qs.length} · Score: ${score}</p>
         <div class="card">
           <div class="q-text">${esc(q.q)}</div>
           <div class="opts">${q.o.map((o, k) => `<button class="opt" data-k="${k}">${esc(o)}</button>`).join("")}</div>
@@ -318,8 +318,8 @@
           else if (xi === k) x.classList.add("wrong");
         });
         app.querySelector("#fb").innerHTML = `
-          <div class="feedback ${ok ? "ok" : "no"}"><strong>${ok ? "Зөв!" : "Буруу."}</strong> ${esc(q.why)}</div>
-          <button class="btn primary" id="nx">${i + 1 < qs.length ? "Дараагийн →" : "Дүнгээ харах"}</button>`;
+          <div class="feedback ${ok ? "ok" : "no"}"><strong>${ok ? "Correct!" : "Not quite."}</strong> ${esc(q.why)}</div>
+          <button class="btn primary" id="nx">${i + 1 < qs.length ? "Next →" : "See your score"}</button>`;
         app.querySelector("#nx").addEventListener("click", () => { i++; render(); });
       }));
     }
@@ -339,11 +339,11 @@
       const c = deck[idx];
       app.innerHTML = `
         <h1>Flashcards</h1>
-        <p class="lead">Нүүр талд англи keyword. Карт дээр дарж монгол утгыг нь хар. Шалгалтад англи нэр томьёог зөв ашиглах нь оноо авах түлхүүр.</p>
-        <div class="chips" role="group" aria-label="Ангилал"></div>
+        <p class="lead">The keyword is on the front. Tap the card to see its meaning. Using the right terminology is the key to marks.</p>
+        <div class="chips" role="group" aria-label="Categories"></div>
         <div class="flash-wrap">
-          <div class="flash${flipped ? " flipped" : ""}" tabindex="0" role="button" aria-label="Картыг эргүүлэх">
-            <div class="side">${flipped ? "Монгол утга" : "English keyword"}</div>
+          <div class="flash${flipped ? " flipped" : ""}" tabindex="0" role="button" aria-label="Flip card">
+            <div class="side">${flipped ? "Meaning" : "Keyword"}</div>
             <div class="${flipped ? "back" : "front"}">${esc(flipped ? c.mn : c.en)}</div>
             ${flipped ? `<div class="topic">${esc(c.en)} · ${esc(c.topic)}</div>` : ""}
           </div>
@@ -351,14 +351,14 @@
             <button class="btn" id="prev">←</button>
             <span class="muted">${idx + 1} / ${deck.length}</span>
             <button class="btn" id="next">→</button>
-            <button class="btn" id="shuf">Холих</button>
+            <button class="btn" id="shuf">Shuffle</button>
           </div>
         </div>`;
       const chips = app.querySelector(".chips");
-      [{ id: "all", mn: "Бүгд" }, ...CATEGORIES].forEach((cc) => {
+      [{ id: "all", label: "All" }, ...CATEGORIES].forEach((cc) => {
         const b = document.createElement("button");
         b.className = "chip" + (cat === cc.id ? " on" : "");
-        b.textContent = cc.mn;
+        b.textContent = cc.label;
         b.addEventListener("click", () => { cat = cc.id; store.set("cardCat", cc.id); build(); render(); });
         chips.appendChild(b);
       });
@@ -377,14 +377,14 @@
     setActiveNav("words");
     app.innerHTML = `
       <h1>Command words</h1>
-      <p class="lead">Асуултын эхний үйл үг ямар төрлийн, хэр урт хариулт хүлээж байгааг заадаг. Ерөнхий дүрэм: 1 оноо ≈ 1 тодорхой цэг.</p>
+      <p class="lead">The command word at the start of a question tells you what kind of answer is expected and how long it should be. General rule: 1 mark ≈ 1 clear point.</p>
       <div class="words">${COMMAND_WORDS.map(([w, d, ex]) => `
         <div class="card word">
           <h3>${esc(w)}</h3>
-          <div>${esc(d)}<div class="ex">Жишээ: ${esc(ex)}</div></div>
+          <div>${esc(d)}<div class="ex">Example: ${esc(ex)}</div></div>
         </div>`).join("")}
       </div>
-      <div class="section-label">Explain асуултад хэрэглэх холбоос үгс</div>
+      <div class="section-label">Linking phrases for Explain questions</div>
       <div class="card">because… · which means… · this results in… · therefore… · as a result… · so that… · whereas… (compare) · for example, in the scenario…</div>`;
   }
 

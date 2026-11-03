@@ -1,4 +1,4 @@
-// AIT сэдвүүдийн интерактив дүрслэл (inline SVG / HTML / canvas, гадны library-гүй).
+// Interactive visualizations for the AIT topics (inline SVG / HTML / canvas, no external libraries).
 const VIZ = (function () {
   "use strict";
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -9,10 +9,10 @@ const VIZ = (function () {
   // ───────────── 1. Vector vs raster (zoom) ─────────────
   function vectorRaster(root) {
     root.innerHTML = `
-      <div class="row zoom-row"><label for="vz">Томруулах:</label><input id="vz" type="range" min="1" max="6" step="1" value="1"><b class="zv">1×</b></div>
+      <div class="row zoom-row"><label for="vz">Zoom:</label><input id="vz" type="range" min="1" max="6" step="1" value="1"><b class="zv">1×</b></div>
       <div class="vr">
-        <figure><div class="vr-box" id="vbox"></div><figcaption><b>Vector (SVG)</b><span>Математик дүрс: дахин зурагдана</span></figcaption></figure>
-        <figure><div class="vr-box" id="rbox"><canvas width="24" height="24"></canvas></div><figcaption><b>Raster (PNG/JPEG)</b><span>24 × 24 = 576 пиксел</span></figcaption></figure>
+        <figure><div class="vr-box" id="vbox"></div><figcaption><b>Vector (SVG)</b><span>Maths-defined shapes, redrawn at any size</span></figcaption></figure>
+        <figure><div class="vr-box" id="rbox"><canvas width="24" height="24"></canvas></div><figcaption><b>Raster (PNG/JPEG)</b><span>24 × 24 = 576 pixels</span></figcaption></figure>
       </div>
       <div class="viz-caption"></div>`;
     const S = 24, F = [19, 11];
@@ -32,10 +32,10 @@ const VIZ = (function () {
       Object.assign(canvas.style, { width: `${px * z}px`, height: `${px * z}px`, left: `${-x0 * unit * z}px`, top: `${-y0 * unit * z}px` });
       root.querySelector(".zv").textContent = `${z}×`;
       cap.innerHTML = z === 1
-        ? "Анхны хэмжээнд хоёулаа адилхан харагдана. Гулсагчийг баруун тийш чирж томруулаарай."
+        ? "At original size both look the same. Drag the slider right to zoom in."
         : z < 4
-          ? `<b>${z}× томруулсан.</b> Vector ирмэг нь гөлгөр хэвээр, учир нь програм тойргийг математикаар дахин зурж байна. Raster-ийн ирмэг шатлаж эхэлсэн, учир нь цөөн пикселийг сунгаж байна.`
-          : `<b>${z}× томруулсан.</b> Raster-д тус тусдаа дөрвөлжин <b>пикселүүд</b> тод харагдаж байна (<b>pixelation</b>). Vector хэдэн ч дахин томруулсан гөлгөр хэвээр, файлын хэмжээ ч өөрчлөгдөхгүй. Тиймээс лого, фонт, billboard-д <b>vector</b>, гэрэл зурагт <b>raster</b> хэрэглэнэ.`;
+          ? `<b>Zoomed ${z}×.</b> The vector edge stays smooth because the software redraws the circle mathematically. The raster edge is starting to look stepped because a small number of pixels is being stretched.`
+          : `<b>Zoomed ${z}×.</b> You can now see the individual square <b>pixels</b> in the raster image (<b>pixelation</b>). The vector stays smooth at any zoom and its file size doesn't change. That's why <b>vector</b> is used for logos, fonts and billboards, and <b>raster</b> for photographs.`;
     }
     const input = root.querySelector("#vz");
     input.addEventListener("input", () => draw(Number(input.value)));
@@ -73,19 +73,19 @@ const VIZ = (function () {
           }).join("")}</tr>`).join("")}</tbody></table>`;
       }
       const fn = mode === "v" ? `=VLOOKUP("${val}", $A$2:$C$6, ${idx}, FALSE)` : `=HLOOKUP("${val}", $B$1:$F$3, ${idx}, FALSE)`;
-      const dir = mode === "v" ? "эхний БАГАНААС доош" : "эхний МӨРӨӨС баруун тийш";
+      const dir = mode === "v" ? "down the first COLUMN" : "across the first ROW";
       const idxName = mode === "v" ? "col_index_num" : "row_index_num";
       root.innerHTML = `
-        ${chips("m", [["v", "VLOOKUP (босоо)"], ["h", "HLOOKUP (хэвтээ)"]], mode)}
+        ${chips("m", [["v", "VLOOKUP (vertical)"], ["h", "HLOOKUP (horizontal)"]], mode)}
         <div class="row lk-ctrl">
-          <label>Хайх утга <select id="lv">${[...data.map((r) => r[0]), "P109"].map((c) => `<option${c === val ? " selected" : ""}>${c}</option>`).join("")}</select></label>
+          <label>Lookup value <select id="lv">${[...data.map((r) => r[0]), "P109"].map((c) => `<option${c === val ? " selected" : ""}>${c}</option>`).join("")}</select></label>
           <label>${idxName} <select id="li"><option value="2"${idx === 2 ? " selected" : ""}>2 (Item)</option><option value="3"${idx === 3 ? " selected" : ""}>3 (Price)</option></select></label>
         </div>
         <div class="formula"><span class="fx">fx</span><code>${esc(fn)}</code><span class="eq">→</span><b class="${found < 0 ? "bad-t" : "good-t"}">${result}</b></div>
         <div class="viz-stage">${grid}</div>
         <div class="viz-caption">${found < 0
-          ? `<b>#N/A.</b> ${mode === "v" ? "VLOOKUP" : "HLOOKUP"} ${dir} "${val}"-г бүх нүдэнд хайсан ч олдсонгүй. FALSE (exact match) тул ойролцоо утга авахгүй, <b>#N/A</b> алдаа буцаана.`
-          : `<b>1.</b> ${dir} "${val}"-г хайна (<span class="k-scan">саарал</span> → <span class="k-hit">олдсон</span>). <b>2.</b> Тэр ${mode === "v" ? "мөрийн" : "баганын"} <b>${idx}</b>-р нүдийг авна (${idxName}). Анхаар: ${idx} нь Excel-ийн ${mode === "v" ? "баганын үсэг биш, хүснэгт доторх дугаар" : "мөрийн дугаар биш, хүснэгт доторх дугаар"}. <b>$</b> тэмдэг нь формулыг доош хуулахад мужийг тогтвортой барина.`}</div>`;
+          ? `<b>#N/A.</b> ${mode === "v" ? "VLOOKUP" : "HLOOKUP"} searched ${dir} for "${val}" but found no match. Because range_lookup is FALSE (exact match), it won't accept a near value, so it returns the <b>#N/A</b> error.`
+          : `<b>1.</b> Search ${dir} for "${val}" (<span class="k-scan">checked</span> → <span class="k-hit">found</span>). <b>2.</b> Return cell number <b>${idx}</b> in that ${mode === "v" ? "row" : "column"} (${idxName}). Note: ${idx} is the position inside the table, not the Excel ${mode === "v" ? "column letter" : "row number"}. The <b>$</b> signs keep the range fixed when the formula is copied down.`}</div>`;
       bindChips(root, "m", (m) => { mode = m; render(); });
       root.querySelector("#lv").addEventListener("change", (e) => { val = e.target.value; render(); });
       root.querySelector("#li").addEventListener("change", (e) => { idx = Number(e.target.value); render(); });
@@ -95,14 +95,14 @@ const VIZ = (function () {
 
   // ───────────── 3. File size & compression ─────────────
   function fileSize(root) {
-    const presets = [["Утасны гэрэл зураг", 4000, 3000, 24], ["Вэб баннер", 1200, 400, 24], ["GIF icon", 64, 64, 8], ["Full HD дэлгэц", 1920, 1080, 24]];
+    const presets = [["Phone photo", 4000, 3000, 24], ["Web banner", 1200, 400, 24], ["GIF icon", 64, 64, 8], ["Full HD screen", 1920, 1080, 24]];
     root.innerHTML = `
       <div class="chips">${presets.map((p, i) => `<button class="chip" data-p="${i}">${p[0]}</button>`).join("")}</div>
       <div class="fs-in">
         <label>Width (px)<input id="fw" type="number" min="1" max="20000" value="1200"></label>
         <span>×</span>
         <label>Height (px)<input id="fh" type="number" min="1" max="20000" value="800"></label>
-        <label>Colour depth<select id="fd"><option value="1">1-bit (2 өнгө)</option><option value="8">8-bit (256 өнгө, GIF)</option><option value="24" selected>24-bit (~16.7 сая, JPEG/PNG)</option></select></label>
+        <label>Colour depth<select id="fd"><option value="1">1-bit (2 colours)</option><option value="8">8-bit (256 colours, GIF)</option><option value="24" selected>24-bit (~16.7 million, JPEG/PNG)</option></select></label>
       </div>
       <div class="fs-out"></div>`;
     const out = root.querySelector(".fs-out");
@@ -114,16 +114,16 @@ const VIZ = (function () {
       const jpg = bytes / 10, png = bytes / 2, max = bytes;
       const bar = (v, cls, label) => `<div class="fs-bar"><span class="fs-l">${label}</span><span class="fs-t"><i class="${cls}" style="width:${Math.max(1.5, (v / max) * 100)}%"></i></span><b>${human(Math.round(v))}</b></div>`;
       out.innerHTML = `
-        <div class="work"><div><span>Пикселийн тоо</span><code>${fmt(w)} × ${fmt(h)} = ${fmt(px)} px</code></div>
-          <div><span>Бит</span><code>${fmt(px)} × ${d} bit = ${fmt(bits)} bits</code></div>
-          <div><span>Байт</span><code>${fmt(bits)} ÷ 8 = ${fmt(bytes)} bytes</code></div>
+        <div class="work"><div><span>Pixels</span><code>${fmt(w)} × ${fmt(h)} = ${fmt(px)} px</code></div>
+          <div><span>Bits</span><code>${fmt(px)} × ${d} bit = ${fmt(bits)} bits</code></div>
+          <div><span>Bytes</span><code>${fmt(bits)} ÷ 8 = ${fmt(bytes)} bytes</code></div>
           <div><span>MB</span><code>${fmt(bytes)} ÷ 1024 ÷ 1024 ≈ <b>${(bytes / 1048576).toFixed(2)} MB</b></code></div></div>
-        <div class="section-mini">Шахалтын дараах ойролцоо хэмжээ</div>
-        ${bar(bytes, "raw", "Шахалтгүй (BMP / TIFF)")}
+        <div class="section-mini">Approximate size after compression</div>
+        ${bar(bytes, "raw", "Uncompressed (BMP / TIFF)")}
         ${d === 24 ? bar(png, "png", "PNG · lossless ≈ ½") + bar(jpg, "jpg", "JPEG · lossy ≈ 1/10") : bar(bytes / 2, "png", "GIF · lossless ≈ ½")}
-        <div class="section-mini">Хэвлэх хэмжээ</div>
-        <div class="print">300 dpi-ээр хэвлэвэл: <b>${(w / 300 * 2.54).toFixed(1)} × ${(h / 300 * 2.54).toFixed(1)} см</b> · 72 ppi-ээр дэлгэцэнд: <b>${(w / 72 * 2.54).toFixed(1)} × ${(h / 72 * 2.54).toFixed(1)} см</b></div>
-        <div class="viz-caption">Томьёо: <b>width × height × colour depth ÷ 8 = bytes</b>. Шалгалтад алхам бүрээ бич (working). Шахалтын харьцаа нь зургаас хамааран өөрчлөгддөг ойролцоо утга. <b>Resampling</b> (пикселийн тоог багасгах) хэмжээг квадратаар бууруулна: өргөн, өндрийг 2 дахин багасгавал файл 4 дахин жижгэрнэ.</div>`;
+        <div class="section-mini">Physical size</div>
+        <div class="print">Printed at 300 dpi: <b>${(w / 300 * 2.54).toFixed(1)} × ${(h / 300 * 2.54).toFixed(1)} cm</b> · On screen at 72 ppi: <b>${(w / 72 * 2.54).toFixed(1)} × ${(h / 72 * 2.54).toFixed(1)} cm</b></div>
+        <div class="viz-caption">Formula: <b>width × height × colour depth ÷ 8 = bytes</b>. In the exam, show every step of your working. Compression ratios are approximate and vary with the image. <b>Resampling</b> (reducing the pixel count) shrinks size by the square: halve the width and height and the file becomes 4 times smaller.</div>`;
     }
     root.querySelectorAll("input,select").forEach((el) => el.addEventListener("input", calc));
     root.querySelectorAll("[data-p]").forEach((b) => b.addEventListener("click", () => {
@@ -172,13 +172,13 @@ const VIZ = (function () {
           </g>`).join("")}
       </svg>`;
       root.innerHTML = `
-        ${chips("t", [["0", "Сайн бүтэц"], ["1", "Хэт гүн бүтэц"]], isDeep ? "1" : "0")}
+        ${chips("t", [["0", "Good structure"], ["1", "Too deep"]], isDeep ? "1" : "0")}
         <div class="viz-stage">${svg}</div>
         <div class="viz-caption">${sel
-          ? `<b>${esc(sel.path.join(" → "))}</b>: Home-оос <b>${sel.d}</b> товшилт. ${sel.d > 3 ? `<span class="bad-t">Three-click rule зөрчигдлөө.</span> Хэрэглэгч олохгүй орхиж явах магадлалтай. Шийдэл: түвшнийг багасгаж, жишээ нь "Drinks" хуудсанд бүх ундааг шууд жагсаах.` : `<span class="good-t">Three-click rule хангагдсан ✓</span>`}`
+          ? `<b>${esc(sel.path.join(" → "))}</b>: <b>${sel.d}</b> click${sel.d === 1 ? "" : "s"} from Home. ${sel.d > 3 ? `<span class="bad-t">This breaks the three-click rule.</span> Users may give up before finding it. Fix: flatten the hierarchy, e.g. list all drinks directly on the "Drinks" page.` : `<span class="good-t">Meets the three-click rule ✓</span>`}`
           : isDeep
-            ? `Drinks доор 3 нэмэлт түвшин нэмэхэд "Flat white" руу <b>5</b> товшилт шаардлагатай болно. <span class="bad-t">Улаан</span> хуудсууд three-click rule-ийг зөрчиж байна. Хуудас дээр дарж замыг хараарай.`
-            : `Энэ бол кафены вэбсайтын <b>visual site map</b>: Home → үндсэн хуудсууд → дэд хуудсууд гэсэн <b>hierarchy</b>. Бүх хуудас Home-оос 2 товшилтоор хүрэх боломжтой. Хуудас дээр дарж Home-оос хэдэн товшилт болохыг хараарай.`}</div>`;
+            ? `Adding three extra levels under Drinks means "Flat white" now needs <b>5</b> clicks. Pages in <span class="bad-t">red</span> break the three-click rule. Click a page to see its path.`
+            : `This is a <b>visual site map</b> for a café website, showing the <b>hierarchy</b>: Home → main pages → sub-pages. Every page can be reached within 2 clicks of Home. Click any page to see how many clicks it takes.`}</div>`;
       bindChips(root, "t", (v) => { isDeep = v === "1"; tree = isDeep ? deep : base; sel = null; render(); });
       root.querySelectorAll(".nd").forEach((g) => {
         const pick = () => { sel = nodes.find((n) => n.n === g.dataset.n); render(); };
@@ -196,20 +196,20 @@ const VIZ = (function () {
     const line = (x1, y1, x2, y2, cls = "") => `<line class="tl ${cls}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
     const M = {
       star: {
-        label: "Wired star", btns: [["cable", "Нэг кабель тасрах"], ["hub", "Switch эвдрэх"]],
+        label: "Wired star", btns: [["cable", "Cut one cable"], ["hub", "Switch fails"]],
         draw(f) {
           const pts = [[90, 60, "PC 1"], [300, 40, "PC 2"], [510, 60, "PC 3"], [90, 240, "PC 4"], [300, 262, "Printer"], [510, 240, "PC 5"]];
           return pts.map(([x, y], i) => line(300, 150, x, y, f === "hub" || (f === "cable" && i === 0) ? "cut" : "")).join("") +
             pts.map(([x, y, l], i) => node(x, y, l, f === "hub" || (f === "cable" && i === 0) ? "off" : "")).join("") + node(300, 150, "Switch", f === "hub" ? "dead" : "hubn", 86);
         },
         cap: {
-          "": "Төхөөрөмж бүр төвийн <b>switch</b>-тэй <b>тус тусын кабелиар</b> холбогдоно. Давуу тал: шинэ төхөөрөмж нэмэх, алдаа олоход хялбар. Сул тал: их кабель шаардана. Товчнууд дээр дарж эвдрэлийг туршаарай.",
-          cable: "<b>PC 1-ийн кабель тасарлаа.</b> Зөвхөн PC 1 сүлжээнээс гарсан, бусад нь хэвийн ажиллаж байна. Энэ бол star topology-ийн гол <span class=\"good-t\">давуу тал</span>.",
-          hub: "<b>Switch эвдэрлээ.</b> Бүх төхөөрөмж холбоогүй боллоо. Switch бол <span class=\"bad-t\">single point of failure</span>, star topology-ийн гол сул тал.",
+          "": "Every device connects to the central <b>switch</b> by <b>its own cable</b>. Advantages: easy to add devices and find faults. Disadvantage: needs a lot of cabling. Use the buttons to simulate a failure.",
+          cable: "<b>PC 1's cable is cut.</b> Only PC 1 has dropped off the network; everything else keeps working. This is the key <span class=\"good-t\">advantage</span> of a star topology.",
+          hub: "<b>The switch has failed.</b> Every device has lost its connection. The switch is a <span class=\"bad-t\">single point of failure</span> — the main disadvantage of a star topology.",
         },
       },
       wireless: {
-        label: "Wireless", btns: [["far", "Хол зай / хана"]],
+        label: "Wireless", btns: [["far", "Distance / walls"]],
         draw(f) {
           const pts = [[120, 70, "Laptop"], [480, 70, "Phone"], [110, 235, "Tablet"], [f === "far" ? 560 : 470, f === "far" ? 270 : 235, "Laptop 2"]];
           const waves = [40, 70, 100].map((r) => `<circle class="wave" cx="300" cy="150" r="${r}"/>`).join("");
@@ -217,36 +217,36 @@ const VIZ = (function () {
             pts.map(([x, y, l], i) => node(x, y, l, f === "far" && i === 3 ? "weakn" : "")).join("") + node(300, 150, "WAP", "hubn", 70);
         },
         cap: {
-          "": "Төхөөрөмжүүд <b>wireless access point (WAP)</b>-д радио долгионоор кабельгүй холбогдоно. Давуу тал: <span class=\"good-t\">хөдөлгөөнт, кабель хэрэггүй, зочин, утас холбоход хялбар</span>. WPA2/WPA3 шифрлэлтээр хамгаална.",
-          far: "<b>Laptop 2 хол, хананы цаана байна.</b> Дохио сул тул <span class=\"bad-t\">хурд буурч, тасалдана</span>. Wireless-ийн сул тал: утастайгаас удаан, хүрээ хязгаартай, хана, хөндлөнгийн дохионы нөлөөтэй, аюулгүй байдал сул.",
+          "": "Devices connect to a <b>wireless access point (WAP)</b> using radio waves, with no cables. Advantages: <span class=\"good-t\">mobility, no cabling, easy to connect guests and phones</span>. Secure it with WPA2/WPA3 encryption.",
+          far: "<b>Laptop 2 is far away, behind walls.</b> The signal is weak, so <span class=\"bad-t\">speed drops and the connection drops out</span>. Wireless disadvantages: slower than wired, limited range, affected by walls and interference, weaker security.",
         },
       },
       cs: {
-        label: "Client-server", btns: [["server", "Сервер унах"]],
+        label: "Client-server", btns: [["server", "Server goes down"]],
         draw(f) {
           const cl = [[90, "PC 1"], [230, "PC 2"], [370, "PC 3"], [510, "PC 4"]];
           return line(300, 50, 300, 140, f === "server" ? "cut" : "") + cl.map(([x]) => line(300, 140, x, 250)).join("") +
             node(300, 50, "Server", f === "server" ? "dead" : "srv", 92) + node(300, 140, "Switch", "hubn", 86) +
             cl.map(([x, l]) => node(x, 250, l, f === "server" ? "warn" : "")).join("") +
-            (f === "server" ? `<text class="tnote bad-t" x="300" y="292" text-anchor="middle">Файл, нэвтрэлт, хэвлэх үйлчилгээ байхгүй</text>` : `<text class="tnote" x="390" y="54">файл · нэвтрэлт · backup · эрх</text>`);
+            (f === "server" ? `<text class="tnote bad-t" x="300" y="292" text-anchor="middle">No file, login or print services</text>` : `<text class="tnote" x="390" y="54">files · logins · backups · access rights</text>`);
         },
         cap: {
-          "": "Төв <b>сервер</b> файл хадгалах, хэрэглэгчийн нэвтрэлт ба эрх, backup, аюулгүй байдлыг удирдана. <b>Client</b>-ууд серверээс үйлчилгээ хүснэ. Давуу тал: <span class=\"good-t\">төвлөрсөн аюулгүй байдал ба backup, том сүлжээнд өргөтгөхөд хялбар</span>. Сул тал: сервер ба мэргэжилтэн үнэтэй.",
-          server: "<b>Сервер унав.</b> Компьютерууд асаалттай ч <span class=\"bad-t\">хуваалцсан файл, нэвтрэлт, хэвлэх үйлчилгээнд хандах боломжгүй</span>. Сервер бол client-server сүлжээний эмзэг цэг.",
+          "": "A central <b>server</b> manages file storage, user logins and access rights, backups and security. <b>Clients</b> request services from it. Advantages: <span class=\"good-t\">centralised security and backups; scales to larger networks</span>. Disadvantages: servers and specialist staff are expensive.",
+          server: "<b>The server is down.</b> The computers are still on, but <span class=\"bad-t\">shared files, logins and printing are unavailable</span>. The server is the weak point of a client-server network.",
         },
       },
       p2p: {
-        label: "Peer-to-peer", btns: [["peer", "Нэг PC унтрах"]],
+        label: "Peer-to-peer", btns: [["peer", "One PC switched off"]],
         draw(f) {
           const p = [[150, 70, "PC 1"], [450, 70, "PC 2"], [450, 235, "PC 3"], [150, 235, "PC 4"]];
           let s = "";
           for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) s += line(p[i][0], p[i][1], p[j][0], p[j][1], f === "peer" && (i === 0 || j === 0) ? "cut" : "");
           return s + p.map(([x, y, l], i) => node(x, y, l, f === "peer" && i === 0 ? "off" : "peer")).join("") +
-            `<text class="tnote" x="300" y="157" text-anchor="middle">сервергүй · бүгд тэгш эрхтэй</text>`;
+            `<text class="tnote" x="300" y="157" text-anchor="middle">no server · all computers are equal</text>`;
         },
         cap: {
-          "": "Бүх компьютер <b>тэгш эрхтэй</b>, тус бүр өөрийн файл, принтерийг бусадтай <b>шууд</b> хуваалцана. Давуу тал: <span class=\"good-t\">хямд, тохируулахад хялбар</span>. Сул тал: аюулгүй байдал ба backup төвлөрөөгүй, ~10-аас цөөн төхөөрөмжтэй жижиг сүлжээнд л тохиромжтой.",
-          peer: "<b>PC 1 унтарлаа.</b> Бусад 3 компьютер хоорондоо <span class=\"good-t\">хэвийн ажилласаар</span> байна. Гэхдээ зөвхөн PC 1 дээр хадгалагдсан файлууд одоо <span class=\"bad-t\">хэнд ч хүрэхгүй</span>.",
+          "": "All computers are <b>equal</b> and share their own files and printers <b>directly</b> with each other. Advantages: <span class=\"good-t\">cheap and simple to set up</span>. Disadvantages: no central security or backups; only suits small networks (about 10 devices or fewer).",
+          peer: "<b>PC 1 is switched off.</b> The other three computers <span class=\"good-t\">keep working</span> together. But any files stored only on PC 1 are now <span class=\"bad-t\">unavailable to everyone</span>.",
         },
       },
     };
@@ -256,7 +256,7 @@ const VIZ = (function () {
         ${chips("tp", Object.entries(M).map(([k, v]) => [k, v.label]), mode)}
         <div class="viz-stage"><svg class="viz-svg topo" viewBox="20 10 560 290">${m.draw(fail)}</svg></div>
         <div class="viz-caption">${m.cap[fail]}</div>
-        <div class="row">${m.btns.map(([k, l]) => `<button class="btn${fail === k ? " primary" : ""}" data-f="${k}">${fail === k ? "↺ Сэргээх" : "⚡ " + l}</button>`).join("")}</div>`;
+        <div class="row">${m.btns.map(([k, l]) => `<button class="btn${fail === k ? " primary" : ""}" data-f="${k}">${fail === k ? "↺ Restore" : "⚡ " + l}</button>`).join("")}</div>`;
       bindChips(root, "tp", (k) => { mode = k; fail = ""; render(); });
       root.querySelectorAll("[data-f]").forEach((b) => b.addEventListener("click", () => { fail = fail === b.dataset.f ? "" : b.dataset.f; render(); }));
     }
@@ -282,13 +282,13 @@ const VIZ = (function () {
       const zp = z ? `<g class="zpath"><path d="M28 18 H272 L28 402 H272"/><path class="ah" d="M262 396 L274 402 L262 408 Z"/><text x="10" y="13">① primary optical area</text><text x="290" y="416" text-anchor="end">terminal area ④</text></g>` : "";
       const good = layout === "good";
       root.innerHTML = `
-        ${chips("l", [["good", "Сайн зохиомж"], ["bad", "Муу зохиомж"]], layout)}
-        <div class="row tg"><label><input type="checkbox" id="cg"${grid ? " checked" : ""}> Rule of thirds сүлжээ</label><label><input type="checkbox" id="cz"${z ? " checked" : ""}> Reading gravity (Z-pattern)</label></div>
+        ${chips("l", [["good", "Good composition"], ["bad", "Poor composition"]], layout)}
+        <div class="row tg"><label><input type="checkbox" id="cg"${grid ? " checked" : ""}> Rule of thirds grid</label><label><input type="checkbox" id="cz"${z ? " checked" : ""}> Reading gravity (Z-pattern)</label></div>
         <div class="comp"><svg class="poster" viewBox="0 0 300 420" role="img" aria-label="poster layout">${poster(layout)}${gl}${zp}</svg>
           <div class="viz-caption">${good
-            ? `<b>Сайн зохиомж.</b> Гол дүрс (performer) <b>rule of thirds</b>-ийн баруун дээд огтлолцлын цэг дээр байрлаж байна, төвд биш тул илүү динамик харагдана. Гарчиг <b>primary optical area</b> буюу зүүн дээд хэсэгт байгаа тул нүд эхлээд түүнийг харна. <b>TICKETS</b> (call-to-action) ба огноо <b>terminal area</b> буюу баруун доод хэсэгт, нүд хамгийн сүүлд хүрэх газарт байна. Текст нэг зүүн шугамд зэрэгцсэн (<b>grid and alignment</b>).`
-            : `<b>Муу зохиомж.</b> Гол дүрс яг <b>төвд</b> байгаа тул статик, огтлолцлын цэгүүдийг ашиглаагүй. Гарчиг доод хэсэгт, жижиг TICKETS товч зүүн дээд буланд байгаа нь <b>reading gravity</b>-ийн эсрэг: нүд эхлээд хамгийн бага чухал зүйлийг харж, call-to-action-ийг алдана. Элементүүд нэг шугамд зэрэгцээгүй.`}
-            <br><br>Сүлжээ ба Z-pattern-ийг асааж, хоёр зохиомжийг харьцуулаарай.</div></div>`;
+            ? `<b>Good composition.</b> The main subject (performer) sits on the top-right intersection of the <b>rule of thirds</b> grid rather than dead centre, which looks more dynamic. The headline is in the <b>primary optical area</b> (top-left), so the eye sees it first. <b>TICKETS</b> (the call to action) and the date sit in the <b>terminal area</b> (bottom-right), where the eye finishes. Text is lined up on one left edge (<b>grid and alignment</b>).`
+            : `<b>Poor composition.</b> The main subject is dead <b>centre</b>, so it feels static and ignores the intersection points. The headline is at the bottom and the small TICKETS button is top-left, working against <b>reading gravity</b>: the eye sees the least important item first and misses the call to action. Elements aren't aligned to a common edge.`}
+            <br><br>Turn on the grid and the Z-pattern to compare the two layouts.</div></div>`;
       bindChips(root, "l", (v) => { layout = v; render(); });
       root.querySelector("#cg").addEventListener("change", (e) => { grid = e.target.checked; render(); });
       root.querySelector("#cz").addEventListener("change", (e) => { z = e.target.checked; render(); });
